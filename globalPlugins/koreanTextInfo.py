@@ -8,6 +8,7 @@ from textInfos.offsets import *
 from NVDAObjects import NVDAObjectTextInfo
 from NVDAObjects.window.edit import Edit, EditTextInfo
 from NVDAObjects.IAccessible import IAccessible
+from NVDAObjects.UIA import UIA
 
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
@@ -17,7 +18,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			clsList.insert(0, KoreanEdit)
 		# 고정 텍스트
 		elif obj.role == controlTypes.ROLE_STATICTEXT:
-			clsList.insert(0, KoreanStaticText)
+			clsList.insert(0, KoreanStaticTextIAccessible if isinstance(obj, IAccessible else KoreanStaticTextUIA)
 
 
 class KoreanEditTextInfo(EditTextInfo):
@@ -53,6 +54,10 @@ class KoreanNVDAObjectTextInfo(NVDAObjectTextInfo):
 		return start, end
 
 
-class KoreanStaticText(IAccessible):
+class KoreanStaticTextIAccessible(IAccessible):
+	TextInfo = KoreanNVDAObjectTextInfo
+
+
+class KoreanStaticTextUIA(UIA):
 	TextInfo = KoreanNVDAObjectTextInfo
 
