@@ -18,7 +18,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			clsList.insert(0, KoreanEdit)
 		# 고정 텍스트
 		elif obj.role == controlTypes.ROLE_STATICTEXT:
-			clsList.insert(0, KoreanStaticTextIAccessible if isinstance(obj, IAccessible else KoreanStaticTextUIA)
+			clsList.insert(0, KoreanStaticTextIAccessible if isinstance(obj, IAccessible) else KoreanStaticTextUIA)
 
 
 class KoreanEditTextInfo(EditTextInfo):
