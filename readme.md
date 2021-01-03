@@ -2,6 +2,11 @@
 
 ## 변경 이력
 
+###  v0.3: 2021-01-04
+- KoreanInputComposition 클래스에서 event_typedCharacter 메소드를 재작성하여 메모장 등 Edit 객체에서 한글 입력 시 입력이 완료된 이전 글자를 읽어 주는 불필요한 동작을 제거함.
+- NVDAHelper 모듈의 handleInputCompositionEnd 함수를 약간 수정하는 선에서 재작성하여 입력 구성을 마칠 때 불피요하게 한글 한 글자를 읽어주는 동작을 제거함.
+
+
 ###  v0.2: 2020-12-10
 - KoreanInputCompositionTextInfo 작성: _getSelectionOffsets, _getCaretOffset를 재작성함
 - KoreanTextInfo에서 KoreanStaticText 클래스를 IaAccessible와 UIA에 따라 두 가지로 분리함.
