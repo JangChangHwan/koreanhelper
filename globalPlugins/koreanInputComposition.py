@@ -5,6 +5,7 @@ import characterProcessing
 import NVDAHelper
 import api
 from NVDAObjects.inputComposition import *
+from scriptHandler import script
 from logHandler import log
 
 
@@ -27,9 +28,8 @@ class KoreanInputCompositionTextInfo(InputCompositionTextInfo):
 		return 0
 
 
-
-
 class KoreanInputComposition(InputComposition):
+
 	TextInfo = KoreanInputCompositionTextInfo
 
 	def event_typedCharacter(self, ch):
@@ -40,6 +40,13 @@ class KoreanInputComposition(InputComposition):
 	def event_gainFocus(self):
 		pass
 
+	@script(gestures=('kb:shift+upArrow', 'kb:shift+downArrow', 'kb:shift+leftArrow', 'kb:shift+rightArrow', 'kb:control+shift+leftArrow', 'kb:control+shift+rightArrow', 'kb:shift+home', 'kb:shift+end', 'kb:control+shift+home', 'kb:control+shift+end', 'kb:control+a'))
+	def script_selection(self, gesture):
+		oldSpeechMode=speech.speechMode
+		speech.speechMode=speech.speechMode_off
+		eventHandler.executeEvent("gainFocus", self.parent)
+		speech.speechMode=oldSpeechMode
+		gesture.send()
 
 
 def handleInputCompositionEnd(result):
@@ -78,7 +85,6 @@ def handleInputCompositionEnd(result):
 
 	if isinstance(focus, InputComposition):
 		return
-
 	if curInputComposition and not result:
 		result=curInputComposition.compositionString.lstrip(u'\u3000 ')
 	if result:
