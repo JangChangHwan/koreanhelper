@@ -1,3 +1,4 @@
+import controlTypes
 import config
 import globalPluginHandler
 import queueHandler
@@ -33,12 +34,7 @@ class KoreanInputCompositionTextInfo(InputCompositionTextInfo):
 class KoreanInputComposition(InputComposition):
 
 	TextInfo = KoreanInputCompositionTextInfo
-
-	def findOverlayClasses(self,clsList):
-		clsList.append(KoreanInputComposition)
-		clsList.append(KoreanInputComposition)
-		return clsList
-
+	repeated = []
 
 	def makeTextInfo(self, position):
 		return self.TextInfo(self, position)
@@ -76,60 +72,14 @@ class KoreanInputComposition(InputComposition):
 	def _backspaceScriptHelper(self,unit,gesture):
 		gesture.send()
 
-
-
-
-
-	def compositionUpdate(self,compositionString,selectionStart,selectionEnd,isReading,announce=True):
-		if isReading and not config.conf["inputComposition"]["reportReadingStringChanges"]: return
-		if not isReading and not config.conf["inputComposition"]["reportCompositionStringChanges"]: return
-		if announce: self.reportNewText((self.readingString if isReading else self.compositionString),compositionString)
-		hasChanged=False
-		if isReading:
-			self.readingString=compositionString
-			self.readingSelectionOffsets=(selectionStart,selectionEnd)
-			self.isReading=True
-			hasChanged=True
-		elif compositionString!=self.compositionString or (selectionStart,selectionEnd)!=self.compositionSelectionOffsets:
-			self.readingString=""
-			self.readingSelectionOffsets=(0,0)
-			self.isReading=False
-			self.compositionString=compositionString
-			self.compositionSelectionOffsets=(selectionStart,selectionEnd)
-			hasChanged=True
-		if hasChanged:
-			eventHandler.queueEvent("valueChange",self)
-			eventHandler.queueEvent("caret",self)
-
-
-''' 원본
 	def reportNewText(self,oldString,newString):
-		if (config.conf["keyboard"]["speakTypedCharacters"] or config.conf["keyboard"]["speakTypedWords"]):
-			newText=calculateInsertedChars(oldString.strip(u'\u3000'),newString.strip(u'\u3000'))
-			if newText:
-				queueHandler.queueFunction(queueHandler.eventQueue,speech.speakText,newText,symbolLevel=characterProcessing.SYMLVL_ALL)
+		if len(self.repeated) == 4:
+			self.repeated.clear()
+		self.repeated.extend([oldString, newString])
+		if len(self.repeated) == 4 and self.repeated.count(newString) == 4:
+			oldString = ''
+		super(KoreanInputComposition, self).reportNewText(oldString,newString)
 
-	def compositionUpdate(self,compositionString,selectionStart,selectionEnd,isReading,announce=True):
-		if isReading and not config.conf["inputComposition"]["reportReadingStringChanges"]: return
-		if not isReading and not config.conf["inputComposition"]["reportCompositionStringChanges"]: return
-		if announce: self.reportNewText((self.readingString if isReading else self.compositionString),compositionString)
-		hasChanged=False
-		if isReading:
-			self.readingString=compositionString
-			self.readingSelectionOffsets=(selectionStart,selectionEnd)
-			self.isReading=True
-			hasChanged=True
-		elif compositionString!=self.compositionString or (selectionStart,selectionEnd)!=self.compositionSelectionOffsets:
-			self.readingString=""
-			self.readingSelectionOffsets=(0,0)
-			self.isReading=False
-			self.compositionString=compositionString
-			self.compositionSelectionOffsets=(selectionStart,selectionEnd)
-			hasChanged=True
-		if hasChanged:
-			eventHandler.queueEvent("valueChange",self)
-			eventHandler.queueEvent("caret",self)
-'''
 
 
 def handleInputCompositionEnd(result):
