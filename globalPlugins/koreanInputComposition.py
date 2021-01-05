@@ -1,9 +1,11 @@
+import config
 import globalPluginHandler
 import queueHandler
 import speech
 import characterProcessing
 import NVDAHelper
 import api
+import textInfos
 from NVDAObjects.inputComposition import *
 from scriptHandler import script
 from logHandler import log
@@ -32,6 +34,15 @@ class KoreanInputComposition(InputComposition):
 
 	TextInfo = KoreanInputCompositionTextInfo
 
+	def findOverlayClasses(self,clsList):
+		clsList.append(KoreanInputComposition)
+		clsList.append(KoreanInputComposition)
+		return clsList
+
+
+	def makeTextInfo(self, position):
+		return self.TextInfo(self, position)
+
 	def event_typedCharacter(self, ch):
 		if ord(ch) < 128:
 			super(KoreanInputComposition, self).event_typedCharacter(ch)
@@ -55,50 +66,84 @@ class KoreanInputComposition(InputComposition):
 
 	def _caretMovementScriptHelper(self, gesture, unit):
 		self.focusToParent()
-		func = getattr(self.parent, '_caretMovementScriptHelper', None)
-		if func:
-			func(gesture, unit)
+		scriptFunc = getattr(self.parent, '_caretMovementScriptHelper', None)
+		if scriptFunc:
+			scriptFunc(gesture, unit)
 		else:
 			gesture.send()
 
 
-def handleInputCompositionEnd(result):
-	import speech
-	import characterProcessing
-	from NVDAObjects.inputComposition import InputComposition
-	from NVDAObjects.IAccessible.mscandui import ModernCandidateUICandidateItem
-	focus=api.getFocusObject()
-	result=result.lstrip(u'\u3000 ')
-	curInputComposition=None
-	if isinstance(focus,InputComposition):
-		curInputComposition=focus
-		oldSpeechMode=speech.speechMode
-		speech.speechMode=speech.speechMode_off
-		eventHandler.executeEvent("gainFocus",focus.parent)
-		speech.speechMode=oldSpeechMode
-	elif isinstance(focus.parent,InputComposition):
-		#Candidate list is still up
-		curInputComposition=focus.parent
-		focus.parent=focus.parent.parent
-	if isinstance(focus, ModernCandidateUICandidateItem):
-		# Correct focus for ModernCandidateUICandidateItem
-		# Find the InputComposition object and
-		# correct focus to its parent
-		if isinstance(focus.container, InputComposition):
-			curInputComposition=focus.container
-			newFocus=curInputComposition.parent
-		else:
-			# Sometimes InputCompositon object is gone
-			# Correct to container of CandidateItem
-			newFocus=focus.container
-		oldSpeechMode=speech.speechMode
-		speech.speechMode=speech.speechMode_off
-		eventHandler.executeEvent("gainFocus",newFocus)
-		speech.speechMode=oldSpeechMode
+	def _backspaceScriptHelper(self,unit,gesture):
+		gesture.send()
 
+
+
+
+
+	def compositionUpdate(self,compositionString,selectionStart,selectionEnd,isReading,announce=True):
+		if isReading and not config.conf["inputComposition"]["reportReadingStringChanges"]: return
+		if not isReading and not config.conf["inputComposition"]["reportCompositionStringChanges"]: return
+		if announce: self.reportNewText((self.readingString if isReading else self.compositionString),compositionString)
+		hasChanged=False
+		if isReading:
+			self.readingString=compositionString
+			self.readingSelectionOffsets=(selectionStart,selectionEnd)
+			self.isReading=True
+			hasChanged=True
+		elif compositionString!=self.compositionString or (selectionStart,selectionEnd)!=self.compositionSelectionOffsets:
+			self.readingString=""
+			self.readingSelectionOffsets=(0,0)
+			self.isReading=False
+			self.compositionString=compositionString
+			self.compositionSelectionOffsets=(selectionStart,selectionEnd)
+			hasChanged=True
+		if hasChanged:
+			eventHandler.queueEvent("valueChange",self)
+			eventHandler.queueEvent("caret",self)
+
+
+''' 원본
+	def reportNewText(self,oldString,newString):
+		if (config.conf["keyboard"]["speakTypedCharacters"] or config.conf["keyboard"]["speakTypedWords"]):
+			newText=calculateInsertedChars(oldString.strip(u'\u3000'),newString.strip(u'\u3000'))
+			if newText:
+				queueHandler.queueFunction(queueHandler.eventQueue,speech.speakText,newText,symbolLevel=characterProcessing.SYMLVL_ALL)
+
+	def compositionUpdate(self,compositionString,selectionStart,selectionEnd,isReading,announce=True):
+		if isReading and not config.conf["inputComposition"]["reportReadingStringChanges"]: return
+		if not isReading and not config.conf["inputComposition"]["reportCompositionStringChanges"]: return
+		if announce: self.reportNewText((self.readingString if isReading else self.compositionString),compositionString)
+		hasChanged=False
+		if isReading:
+			self.readingString=compositionString
+			self.readingSelectionOffsets=(selectionStart,selectionEnd)
+			self.isReading=True
+			hasChanged=True
+		elif compositionString!=self.compositionString or (selectionStart,selectionEnd)!=self.compositionSelectionOffsets:
+			self.readingString=""
+			self.readingSelectionOffsets=(0,0)
+			self.isReading=False
+			self.compositionString=compositionString
+			self.compositionSelectionOffsets=(selectionStart,selectionEnd)
+			hasChanged=True
+		if hasChanged:
+			eventHandler.queueEvent("valueChange",self)
+			eventHandler.queueEvent("caret",self)
+'''
+
+
+def handleInputCompositionEnd(result):
+	from NVDAObjects.inputComposition import InputComposition
+	import speech
+	focus = api.getFocusObject()
+	parent = None
 	if isinstance(focus, InputComposition):
+		parent = focus.parent
+	elif isinstance(focus.parent, InputComposition):
+		parent = focus.parent.parent
+	else:
 		return
-	if curInputComposition and not result:
-		result=curInputComposition.compositionString.lstrip(u'\u3000 ')
-	if result:
-		speech.speakText(result,symbolLevel=characterProcessing.SYMLVL_ALL)
+	oldSpeechMode=speech.speechMode
+	speech.speechMode=speech.speechMode_off
+	eventHandler.executeEvent("gainFocus", parent)
+	speech.speechMode = oldSpeechMode
