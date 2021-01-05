@@ -9,12 +9,13 @@ from NVDAObjects import NVDAObjectTextInfo
 from NVDAObjects.window.edit import Edit, EditTextInfo
 from NVDAObjects.IAccessible import IAccessible
 from NVDAObjects.UIA import UIA
+from NVDAObjects.inputComposition import InputComposition
 
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	def chooseNVDAObjectOverlayClasses(self, obj, clsList):
 		# 단순 편집창
-		if obj.role == controlTypes.ROLE_EDITABLETEXT and obj.windowClassName == "Edit":
+		if obj.role == controlTypes.ROLE_EDITABLETEXT and obj.windowClassName == "Edit" and not isinstance(obj, InputComposition):
 			clsList.insert(0, KoreanEdit)
 		# 고정 텍스트
 		elif obj.role == controlTypes.ROLE_STATICTEXT:

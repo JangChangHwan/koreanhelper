@@ -11,8 +11,8 @@ from logHandler import log
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
-	def __init__(self):
-		super(GlobalPlugin, self).__init__()
+	def __init__(self, *args, **kwargs):
+		super(GlobalPlugin, self).__init__(*args, **kwargs)
 		NVDAHelper.handleInputCompositionEnd = handleInputCompositionEnd
 
 	def chooseNVDAObjectOverlayClasses(self, obj, clsList):
@@ -41,12 +41,25 @@ class KoreanInputComposition(InputComposition):
 		pass
 
 	@script(gestures=('kb:shift+upArrow', 'kb:shift+downArrow', 'kb:shift+leftArrow', 'kb:shift+rightArrow', 'kb:control+shift+leftArrow', 'kb:control+shift+rightArrow', 'kb:shift+home', 'kb:shift+end', 'kb:control+shift+home', 'kb:control+shift+end', 'kb:control+a'))
-	def script_selection(self, gesture):
+	def script_moveCaret(self, gesture):
+		self.focusToParent()
+		gesture.send()
+
+
+	def focusToParent(self):
 		oldSpeechMode=speech.speechMode
 		speech.speechMode=speech.speechMode_off
 		eventHandler.executeEvent("gainFocus", self.parent)
 		speech.speechMode=oldSpeechMode
-		gesture.send()
+
+
+	def _caretMovementScriptHelper(self, gesture, unit):
+		self.focusToParent()
+		func = getattr(self.parent, '_caretMovementScriptHelper', None)
+		if func:
+			func(gesture, unit)
+		else:
+			gesture.send()
 
 
 def handleInputCompositionEnd(result):
