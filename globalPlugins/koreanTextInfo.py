@@ -5,20 +5,20 @@ import ui
 import textInfos
 import controlTypes
 from textInfos.offsets import *
-from NVDAObjects import NVDAObjectTextInfo
+import NVDAObjects
 from NVDAObjects.window.edit import Edit, EditTextInfo
 from NVDAObjects.IAccessible import IAccessible
 from NVDAObjects.UIA import UIA
-from NVDAObjects.inputComposition import InputComposition
+
 
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	def chooseNVDAObjectOverlayClasses(self, obj, clsList):
 		# 단순 편집창
-		if obj.role == controlTypes.ROLE_EDITABLETEXT and obj.windowClassName == "Edit" and not isinstance(obj, InputComposition):
+		if obj.role == controlTypes.ROLE_EDITABLETEXT and obj.windowClassName == "Edit" and not isinstance(obj, NVDAObjects.inputComposition.InputComposition):
 			clsList.insert(0, KoreanEdit)
 		# 고정 텍스트
-		elif obj.role == controlTypes.ROLE_STATICTEXT:
+		elif obj.role == controlTypes.ROLE_STATICTEXT or obj.role == controlTypes.ROLE_LISTITEM:
 			clsList.insert(0, KoreanStaticTextIAccessible if isinstance(obj, IAccessible) else KoreanStaticTextUIA)
 
 
@@ -46,7 +46,7 @@ class KoreanEdit(Edit):
 
 
 
-class KoreanNVDAObjectTextInfo(NVDAObjectTextInfo):
+class KoreanNVDAObjectTextInfo(NVDAObjects.NVDAObjectTextInfo):
 	def _getWordOffsets(self, offset):
 		paraStart, paraEnd = self._getParagraphOffsets(offset)
 		paraText = self._getTextRange(paraStart, paraEnd)

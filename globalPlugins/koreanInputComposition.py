@@ -8,6 +8,8 @@ import NVDAHelper
 import api
 import textInfos
 from NVDAObjects.inputComposition import *
+from NVDAObjects.window.edit import *
+from NVDAObjects.IAccessible.winword import *
 from scriptHandler import script
 from logHandler import log
 
@@ -35,7 +37,6 @@ class KoreanInputComposition(InputComposition):
 
 	TextInfo = KoreanInputCompositionTextInfo
 	repeated = []
-
 	def makeTextInfo(self, position):
 		return self.TextInfo(self, position)
 
@@ -73,13 +74,17 @@ class KoreanInputComposition(InputComposition):
 		gesture.send()
 
 	def reportNewText(self,oldString,newString):
-		if len(self.repeated) == 4:
-			self.repeated.clear()
-		self.repeated.extend([oldString, newString])
-		if len(self.repeated) == 4 and self.repeated.count(newString) == 4:
+		if isinstance(self.parent, WordDocument):
 			oldString = ''
+		elif isinstance(self.parent, RichEdit50):
+			oldString = ''
+		elif isinstance(self.parent, Edit):
+			self.repeated.append(oldString == newString)
+			if len(self.repeated) == 2 :
+				if self.repeated[0] and self.repeated[1]:
+					oldString = ''
+				self.repeated.clear()
 		super(KoreanInputComposition, self).reportNewText(oldString,newString)
-
 
 
 def handleInputCompositionEnd(result):
