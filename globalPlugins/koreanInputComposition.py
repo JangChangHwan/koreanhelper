@@ -37,16 +37,27 @@ class KoreanInputComposition(InputComposition):
 
 	TextInfo = KoreanInputCompositionTextInfo
 	repeated = []
+
 	def makeTextInfo(self, position):
 		return self.TextInfo(self, position)
 
 	def event_typedCharacter(self, ch):
 		if ord(ch) < 128:
+			if config.conf['keyboard']['speakTypedWords'] and hasattr(self.parent, '_caretMovementScriptHelper'):
+				self.focusToParent()
+				info = api.getReviewPosition()
+				if not ch.isspace():
+					info.move(textInfos.UNIT_CHARACTER, -1)
+				info.move(textInfos.UNIT_CHARACTER, -1)
+				info.collapse()
+				info.expand(textInfos.UNIT_WORD)
+				speech.speakText(info.text)
 			super(KoreanInputComposition, self).event_typedCharacter(ch)
 
 
 	def event_gainFocus(self):
 		pass
+
 
 	@script(gestures=('kb:shift+upArrow', 'kb:shift+downArrow', 'kb:shift+leftArrow', 'kb:shift+rightArrow', 'kb:control+shift+leftArrow', 'kb:control+shift+rightArrow', 'kb:shift+home', 'kb:shift+end', 'kb:control+shift+home', 'kb:control+shift+end', 'kb:control+a'))
 	def script_moveCaret(self, gesture):
